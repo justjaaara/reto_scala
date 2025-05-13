@@ -1,3 +1,6 @@
+import play.api.libs.json._
+import java.io._
+
 case class Vehiculo(id: Int, marca: String, modelo: String, año: Int, precio: Double)
 case class Venta(id: Int, vehiculo: Vehiculo, vendedor: String, cliente: String)
 
@@ -24,7 +27,8 @@ def ordenarVentasPorAnio(ventas: List[Venta]) : List[Venta] = {
 }
 
 // Generar un reporte en formato JSON con las estadísticas generadas.
-
+implicit val vehiculoWrites: Writes[Vehiculo] = Json.writes[Vehiculo]
+implicit val ventaWrites: Writes[Venta] = Json.writes[Venta]
 
 @main
 def main(): Unit =
@@ -65,3 +69,24 @@ def main(): Unit =
   val ventasOrdenadas = ordenarVentasPorAnio(ventas)
   println(s"Ventas ordenadas por año (de más reciente a más antiguo)  ")
   ventasOrdenadas.map(x => println(s"Vehículo: ${x.vehiculo.marca} ${x.vehiculo.modelo}, Año: ${x.vehiculo.año}, Precio: ${x.vehiculo.precio}"))
+
+  //Generar un reporte en formato JSON con las estadísticas generadas.
+  println("---------------------------------------------------------------------------------------------------------------")
+  val reporteJson: JsValue = Json.obj(
+    "totalVentasPorMarca" -> totalPorMarca,
+    "vehiculosCaros" -> vehiculosCarosList,
+    "vehiculoMasCaroUltimoAnio" -> Json.toJson(v),
+    "ventasOrdenadasPorAnio" -> ventasOrdenadas
+  )
+  println("REPORTE EN FORMATO JSON")
+  println(Json.prettyPrint(reporteJson))
+
+  // Guardar en carpeta "reportes"
+  val carpeta = new File("reportes")
+  if (!carpeta.exists()) carpeta.mkdirs()
+
+  val archivo = new PrintWriter(new File("reportes/reporte_ventas.json"))
+  archivo.write(Json.prettyPrint(reporteJson))
+  archivo.close()
+
+  println("✅ Reporte guardado en 'reportes/reporte_ventas.json'")
